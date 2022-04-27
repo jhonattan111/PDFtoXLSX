@@ -1,6 +1,7 @@
 ﻿using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.parser;
 using PDFtoXLSX;
+using PDFtoXLSX.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,12 +18,14 @@ namespace PDFtoXLSX
             Conteudo = new List<List<Models.PdfPage>>();
             CaminhoArquivos = new List<string>();
             _pastaRaiz = pastaRaiz;
+            NotasFiscaisServico = new List<DadosNota>();
         }
 
         private string _pastaRaiz {get; set;}
         public List<string> log { get; set; }
         public List<string> CaminhoArquivos { get; set; }
         public List<List<Models.PdfPage>> Conteudo { get; set; }
+        public List<DadosNota> NotasFiscaisServico { get; set; }
 
         private void LerPDF(string caminho)
         {

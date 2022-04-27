@@ -17,6 +17,7 @@ namespace PDFtoXLSX
             var dataEmissao = ExtrairDataEmissaoNota(pagina.content);
             var prestador = ExtrairDadosPrestador(pagina.content);
             var tomador = ExtrairDadosTomador(pagina.content);
+            var itens = ExtrairDadosItens(pagina.content);
 
 
             var dados = new DadosNota()
@@ -25,54 +26,67 @@ namespace PDFtoXLSX
                 DataEmissao = dataEmissao,
                 Prestador = prestador,
                 Tomador = tomador,
+                Itens = itens
             };
 
             return dados;
         }
 
-        public string ExtrairNumeroNota(string conteudo)
+        private string ExtrairNumeroNota(string conteudo)
         {
             string rgxDados = "(?<=\\n NOTA FISCAL\\n)(.*)(?=\\nPREFEITURA DE PETRÓPOLIS)";
 
             return ExtrairConteudo(conteudo, rgxDados);
         }
-        
-        public DateTime ExtrairDataEmissaoNota(string conteudo)
+
+        private DateTime ExtrairDataEmissaoNota(string conteudo)
         {
             string rgxDados = "(?<=\\n DATA DE EMISSÃO NOTA\\n)(.*)(?=\\nNOTA FISCAL IMPERIAL\\n)";
-
             string DataEmissao = ExtrairConteudo(conteudo, rgxDados);
-
             var data = DateTime.Parse(DataEmissao);
 
             return data;
         }
 
-        public Prestador ExtrairDadosPrestador(string conteudo)
+        private Prestador ExtrairDadosPrestador(string conteudo)
         {
-            string rgxDados = "(?<=\\n RAZÃO SOCIAL PRESTADOR NOME FANTASIA PRESTADOR\\n)(.*)(?=\\nTOMADOR DE SERVIÇOS\\n NOME DO TOMADOR\\n)";
 
-            var dadosPrestador = ExtrairConteudo(conteudo, rgxDados);
+            
+            string pos1 = @"PRESTADOR DE SERVIÇOS";
+            string pos2 = @"TOMADOR DE SERVIÇOS";
+
+            conteudo = ExtrairConteudo(conteudo, pos1, pos2);
+
+            //var inicioConteudo = conteudo.IndexOf(pos1);
+            //var fimConteudo = conteudo.IndexOf(pos2);
+            //
+            //conteudo = conteudo.Substring(inicioConteudo, fimConteudo - inicioConteudo);
 
             string rgxRazaoSocial = "(?<=\\n RAZÃO SOCIAL PRESTADOR NOME FANTASIA PRESTADOR\\n)(.*)(?=\\n ENDEREÇO COMPLEMENTO\\n)";
-            string razaoSocial = ExtrairConteudo(dadosPrestador, rgxRazaoSocial);
+            string razaoSocial = ExtrairConteudo(conteudo, rgxRazaoSocial);
 
             var prestador = new Prestador(razaoSocial);
 
             return prestador;
         }
 
-        public Tomador ExtrairDadosTomador(string conteudo)
+        private Tomador ExtrairDadosTomador(string conteudo)
         {
-            string rgxDados = "(?<=\\nTOMADOR DE SERVIÇOS\\n NOME DO TOMADOR\\n)(.*)(?=\\nDISCRIMINAÇÃO DOS SERVIÇOS\\n)";
+            string pos1 = @"TOMADOR DE SERVIÇOS";
+            string pos2 = @"DISCRIMINAÇÃO DOS SERVIÇOS";
 
-            var dadosTomador = ExtrairConteudo(conteudo, rgxDados);
+            conteudo = ExtrairConteudo(conteudo, pos1, pos2);
+
+            //var inicioConteudo = conteudo.IndexOf(pos1);
+            //var fimConteudo = conteudo.IndexOf(pos2);
+            //
+            //conteudo = conteudo.Substring(inicioConteudo, fimConteudo - inicioConteudo);
 
             var rgxNome = "(?<=\\n NOME DO TOMADOR\\n)(.*)(?=\\n ENDEREÇO COMPLEMENTO\\n)";
-            var nome = ExtrairConteudo(dadosTomador, rgxNome);
+            var nome = ExtrairConteudo(conteudo, rgxNome);
 
             var rgxCPFCNPJ = "(?<=TELEFONE E-MAIL\\n)(.*)";
-            var cpfcnpj = ExtrairConteudo(dadosTomador, rgxCPFCNPJ);
+            var cpfcnpj = ExtrairConteudo(conteudo, rgxCPFCNPJ);
             cpfcnpj = cpfcnpj.Substring(0, cpfcnpj.IndexOf(' '));
 
             var tomador = new Tomador(nome, cpfcnpj);
@@ -80,11 +94,92 @@ namespace PDFtoXLSX
             return tomador;
         }
 
-        public string ExtrairDadosServicos(string conteudo)
+        private List<DadosNotaItem> ExtrairDadosItens(string conteudo)
         {
-            string rgxDados = "(?<=\\nDISCRIMINAÇÃO DOS SERVIÇOS\\n)(.*)(?=OBSERVAÇÕES(.*)IMPOSTOS FEDERAIS  IMPOSTOS MUNICIPAIS)";
+            string pos1 = @"DISCRIMINAÇÃO DOS SERVIÇOS";
+            string pos2 = @"OBSERVAÇÕES";
 
-            return ExtrairConteudo(conteudo, rgxDados);
+            conteudo = ExtrairConteudo(conteudo, pos1, pos2);
+
+            //var inicioConteudo = conteudo.IndexOf(pos1);
+            //var fimConteudo = conteudo.IndexOf(pos2);
+            //
+            //conteudo = conteudo.Substring(inicioConteudo, fimConteudo - inicioConteudo);
+
+            var layout = ExtrairlayoutServicos(conteudo);
+
+            if(layout == ELayout.NaoRetido)
+            {
+                var notas = ExtrairDadosServicoNaoRetido(conteudo);
+
+                return notas;
+            }
+
+            if(layout == ELayout.Retido)
+            {
+                string dadosServico = "";
+
+                var nota = ExtrairDadosServicoRetido(conteudo);
+            }
+
+            return new List<DadosNotaItem>();
+        }
+
+        private List<DadosNotaItem> ExtrairDadosServicoRetido(string conteudo)
+        {
+
+            return new List<DadosNotaItem>();
+        }
+
+        private List<DadosNotaItem> ExtrairDadosServicoNaoRetido(string conteudo)
+        {
+            string pos1 = "UNID QUANT. DESCRIÇÃO DO SERVIÇO VALOR UNIT. VALOR TOTAL";
+            string pos2 = "\n     \n";
+
+            conteudo = ExtrairConteudo(conteudo, pos1, pos2);
+
+            var dadosItens = new List<DadosNotaItem>();
+
+            var itens = conteudo.Split('\n').Where(d => !string.IsNullOrWhiteSpace(d)).ToList();
+            var rgxDescricao = @"(?<=[\d]  )(.*)(?=  [\d])";
+
+            foreach (var item in itens)
+            {
+                string conteudoValor = item.Substring(item.RetornarUltimosValoresIndice("  ", -1));
+                string conteudoDescicao = ExtrairConteudo(item, rgxDescricao);
+                string[] cv = conteudoValor.Trim().Split(' ').Where(d => !string.IsNullOrWhiteSpace(d)).ToArray();
+                List<decimal> valores = new List<decimal>();
+                
+                foreach (var c in cv)
+                {
+                    decimal v = 0m;
+
+                    var d = c.Replace(".", ",");
+
+                    decimal.TryParse(d, out v);
+
+                    valores.Add(v);
+
+                }
+
+                var itemNFS = new DadosNotaItem(0, conteudoDescicao, valores[0], 0, 0, valores[1], 0, false); 
+
+                dadosItens.Add(itemNFS);
+            }
+
+            return dadosItens;
+        }
+
+        private ELayout ExtrairlayoutServicos(string conteudo)
+        {
+            string rgxLayout = "(?<=\\n)(.*)";
+
+            var layout = ExtrairConteudo(conteudo, rgxLayout);
+
+            if (layout.Contains("ALÍQUOTA"))
+                return ELayout.Retido;
+
+            return ELayout.NaoRetido;
         }
 
         private string ExtrairConteudo(string informacoes, string pattern)
@@ -92,6 +187,15 @@ namespace PDFtoXLSX
             string conteudo = Regex.Match(informacoes, pattern).ToString();
 
             return conteudo.Trim();
+        }
+
+        private string ExtrairConteudo(string informacoes, string pos1, string pos2)
+        {
+            var inicioConteudo = informacoes.IndexOf(pos1) + pos1.Length;
+            var fimConteudo = informacoes.IndexOf(pos2);
+
+            informacoes = informacoes.Substring(inicioConteudo, fimConteudo - inicioConteudo);
+            return informacoes;
         }
     }
 }
