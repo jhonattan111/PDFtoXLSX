@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace PDFtoXLSX
 {
-    public class LeitorPDF
+    public partial class LeitorPDF
     {
         public LeitorPDF(string pastaRaiz)
         {

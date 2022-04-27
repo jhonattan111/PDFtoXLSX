@@ -15,8 +15,8 @@ namespace PDFtoXLSX.Models
 
         public string Numero { get; set; }
         public DateTime DataEmissao { get; set; }
-        public string PrestadorServicos { get; set; }
-        public string CPFCNPJPrestadorServicos { get; set; }
+        public Prestador Prestador { get; set; }
+        public Tomador Tomador { get; set; }
         public List<DadosNotaItem> Itens { get; set; }
     }
 }

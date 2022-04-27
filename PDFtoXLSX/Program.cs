@@ -1,6 +1,6 @@
 ﻿using PDFtoXLSX;
 
-var caminhoRaiz = @"C:\Users\jhona\Desktop\notas";
+var caminhoRaiz = @"C:\Users\55229\Desktop\nfs";
 
 var leitor = new LeitorPDF(caminhoRaiz);
 
@@ -11,7 +11,7 @@ foreach(var documento in leitor.Conteudo)
 {
     foreach(var pagina in documento)
     {
-        Console.WriteLine(pagina.content);
+        leitor.ExtrairDados(pagina);
     }
 }
 
