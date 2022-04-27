@@ -57,6 +57,13 @@ namespace PDFtoXLSX
             if(Directory.Exists(_pastaRaiz))
             {
                 CaminhoArquivos.AddRange(Directory.GetFiles(_pastaRaiz, "*.pdf"));
+
+                var diretorios = Directory.GetDirectories(_pastaRaiz);
+
+                foreach(var diretorio in diretorios)
+                {
+                    CaminhoArquivos.AddRange(Directory.GetFiles(diretorio, "*.pdf"));
+                }
             }
             else
             {

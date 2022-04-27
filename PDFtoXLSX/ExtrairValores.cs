@@ -11,13 +11,14 @@ namespace PDFtoXLSX
 {
     public partial class LeitorPDF
     {
-        public DadosNota ExtrairDados(Models.PdfPage pagina)
+        public void ExtrairDados(Models.PdfPage pagina)
         {
             var numeroNota = ExtrairNumeroNota(pagina.content);
             var dataEmissao = ExtrairDataEmissaoNota(pagina.content);
             var prestador = ExtrairDadosPrestador(pagina.content);
             var tomador = ExtrairDadosTomador(pagina.content);
-            var itens = ExtrairDadosItens(pagina.content);
+            //var itens = ExtrairDadosItens(pagina.content);
+            var informacoes = ExtrairDadosInformacoes(pagina.content);
 
 
             var dados = new DadosNota()
@@ -26,10 +27,11 @@ namespace PDFtoXLSX
                 DataEmissao = dataEmissao,
                 Prestador = prestador,
                 Tomador = tomador,
-                Itens = itens
+                //Itens = itens,
+                Informacoes = informacoes,
             };
 
-            return dados;
+            NotasFiscaisServico.Add(dados);
         }
 
         private string ExtrairNumeroNota(string conteudo)
@@ -42,10 +44,11 @@ namespace PDFtoXLSX
         private DateTime ExtrairDataEmissaoNota(string conteudo)
         {
             string rgxDados = "(?<=\\n DATA DE EMISSÃO NOTA\\n)(.*)(?=\\nNOTA FISCAL IMPERIAL\\n)";
-            string DataEmissao = ExtrairConteudo(conteudo, rgxDados);
-            var data = DateTime.Parse(DataEmissao);
+            string DataEmissaoSTR = ExtrairConteudo(conteudo, rgxDados);
+            DateTime DataEmissao = new DateTime();
+            DateTime.TryParse(DataEmissaoSTR, out DataEmissao);
 
-            return data;
+            return DataEmissao;
         }
 
         private Prestador ExtrairDadosPrestador(string conteudo)
@@ -87,11 +90,47 @@ namespace PDFtoXLSX
 
             var rgxCPFCNPJ = "(?<=TELEFONE E-MAIL\\n)(.*)";
             var cpfcnpj = ExtrairConteudo(conteudo, rgxCPFCNPJ);
-            cpfcnpj = cpfcnpj.Substring(0, cpfcnpj.IndexOf(' '));
+
+            var rgxModelocpfcnpj = @"([\d]{2}\.[\d]{3}\.[\d]{3}\/[\d]{4}\-[\d]{2})|([\d]{3}\.[\d]{3}\.[\d]{3}\-[\d]{2})";
+
+            if (!Regex.Match(conteudo, rgxModelocpfcnpj).Success)
+                cpfcnpj = cpfcnpj.Substring(0, cpfcnpj.IndexOf(' '));
 
             var tomador = new Tomador(nome, cpfcnpj);
 
             return tomador;
+        }
+
+        private Informacoes ExtrairDadosInformacoes(string conteudo)
+        {
+            string pos1 = @"IMPOSTOS FEDERAIS  IMPOSTOS MUNICIPAIS";
+            string pos2 = @"DESCRIÇÃO DA ATIVIDADE DA PRESTAÇÃO";
+
+            conteudo = ExtrairConteudo(conteudo, pos1, pos2);
+
+            var pos3 = Utils.RetornarUltimosValoresIndice(conteudo, "\n", -2);
+            var valoresImposto = conteudo.Substring(pos3);
+            valoresImposto = valoresImposto.Replace(" %", " ").Replace("\n", " ").Trim();
+
+            var vi = valoresImposto.Split(" ").Where(d => !string.IsNullOrWhiteSpace(d)).ToArray();
+
+            var retido = vi[8].ToBool();
+
+            decimal aliquotaiss = 0m;
+            decimal.TryParse(vi[5], out aliquotaiss);
+
+            decimal basecalculo = 0m;
+            decimal.TryParse(vi[6], out basecalculo);
+
+            decimal totaliss = 0m;
+            decimal.TryParse(vi[7], out totaliss);
+
+            decimal valorliquido = 0m;
+            decimal.TryParse(vi[9], out valorliquido);
+
+            var info = new Informacoes(retido, 0, 0, 0, 0, 0, aliquotaiss, basecalculo, totaliss, valorliquido);
+
+            return info;
         }
 
         private List<DadosNotaItem> ExtrairDadosItens(string conteudo)

@@ -8,32 +8,37 @@ namespace PDFtoXLSX
 {
     public static class Utils
     {
-        public static int RetornarUltimosValoresIndice(this string conteudo, string pattern, int posicao = 0)
+        public static int RetornarUltimosValoresIndice(this string conteudo, string padrao, int posicao = 0)
         {
             string resultado = conteudo;
-            string preResultado = conteudo;
 
             for (int i = 0; i >= posicao; i--)
             {
-                var posicaoUltimo = preResultado.LastIndexOf(pattern);
-                preResultado = conteudo.Substring(0, conteudo.Length - (conteudo.Length - posicaoUltimo));
+                var posicaoUltimo = resultado.LastIndexOf(padrao);
+                resultado = conteudo.Substring(0, conteudo.Length - (conteudo.Length - posicaoUltimo));
             }
 
-            return preResultado.Length;
+            return resultado.Length;
         }
 
-        public static int RetornarPrimeirosValoresIndice(this string conteudo, string pattern, int posicao = 0)
+        public static int RetornarPrimeirosValoresIndice(this string conteudo, string padrao, int posicao = 0)
         {
             string resultado = conteudo;
-            string preResultado = conteudo;
 
             for (int i = 0; i <= posicao; i++)
             {
-                var posicaoPrimeiro = preResultado.IndexOf(pattern);
-                preResultado = conteudo.Substring(posicaoPrimeiro);
+                var posicaoPrimeiro = resultado.IndexOf(padrao);
+                resultado = conteudo.Substring(posicaoPrimeiro);
             }
 
-            return preResultado.Length;
+            return resultado.Length;
+        }
+
+        public static bool ToBool(this string e)
+        {
+            if (e.ToUpper() == "SIM") return true;
+
+            return false;
         }
     }
 }

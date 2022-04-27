@@ -23,5 +23,10 @@
         public decimal ValorTotal { get; set; }
         public decimal ValorLiquido { get; set; }
         public bool Retido { get; set; }
+
+        public override string ToString()
+        {
+            return $"QTD: {Quantidade} | Desc: {Descricao} | Vlr Un: {ValorUnitario} | Aliq: {Aliquota} | Vlr ISS : {ValorISS}";
+        }
     }
 }

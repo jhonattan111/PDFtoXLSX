@@ -1,6 +1,7 @@
-﻿using PDFtoXLSX;
+﻿using Ganss.Excel;
+using PDFtoXLSX;
 
-var caminhoRaiz = @"C:\Users\55229\Desktop\nfs";
+var caminhoRaiz = @"G:\Documentos\Funcionários\Jessica Amaduro\NOTAS ARMAZÉM";
 
 var leitor = new LeitorPDF(caminhoRaiz);
 
@@ -14,5 +15,12 @@ foreach(var documento in leitor.Conteudo)
         leitor.ExtrairDados(pagina);
     }
 }
+
+foreach(var nota in leitor.NotasFiscaisServico)
+{
+    Console.WriteLine(nota.Itens);
+}
+
+new ExcelMapper().Save("notas.xlsx", leitor.NotasFiscaisServico, "Notas Fiscais");
 
 Console.ReadKey();
